@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>ClaimPath Rx</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#06060f;--bg1:#0b0b1a;--bg2:#0f0f22;
+  --bdr:rgba(139,92,246,.12);--bdr2:rgba(139,92,246,.25);
+  --purple:#8b5cf6;--purple2:#7c3aed;--purple3:#a78bfa;
+  --teal:#0ea5e9;--teal2:#38bdf8;
+  --green:#10b981;--amber:#f59e0b;--red:#ef4444;
+  --txt:#e2e0f0;--txt2:#8b8aaa;--txt3:#4a4870;
+  --glass:rgba(11,11,26,.7);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--txt);font-family:'DM Sans',sans-serif;overflow-x:hidden;cursor:none;}
+#cur{width:10px;height:10px;background:var(--purple);border-radius:50%;position:fixed;top:0;left:0;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);mix-blend-mode:screen;transition:transform .15s;}
+#cur-r{width:34px;height:34px;border:1px solid rgba(139,92,246,.5);border-radius:50%;position:fixed;top:0;left:0;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:width .2s,height .2s,border-color .2s;}
+#bg-canvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:.3;}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 2rem;height:58px;display:flex;align-items:center;gap:2px;background:rgba(6,6,15,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--bdr);}
+.nb{font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;color:#fff;margin-right:1.2rem;flex-shrink:0;letter-spacing:-.4px;}
+.nb em{color:var(--purple);font-style:normal;}
+.nb span{font-size:.52rem;font-weight:600;background:var(--purple2);color:#fff;padding:2px 5px;border-radius:20px;margin-left:5px;vertical-align:middle;font-family:'DM Sans',sans-serif;}
+.nl{padding:.38rem .7rem;font-size:.73rem;font-weight:500;color:var(--txt3);cursor:pointer;border-radius:6px;white-space:nowrap;transition:all .2s;border:1px solid transparent;}
+.nl:hover{color:var(--purple3);background:rgba(139,92,246,.08);}
+.nl.on{color:var(--purple3);background:rgba(139,92,246,.12);border-color:var(--bdr);}
+.nst{margin-left:auto;display:flex;align-items:center;gap:7px;font-size:.7rem;color:var(--txt3);flex-shrink:0;font-family:'JetBrains Mono',monospace;}
+.sd{width:7px;height:7px;border-radius:50%;background:#374151;transition:all .4s;}
+.sd.on{background:var(--green);box-shadow:0 0 8px var(--green);}
+.sd.off{background:var(--red);}
+.sec{display:none;min-height:100vh;padding:78px 0 4rem;position:relative;z-index:1;animation:fu .38s ease both;}
+.sec.on{display:block;}
+#s-home{padding-top:0;display:flex;align-items:center;min-height:100vh;}
+#s-home.on{display:flex;}
+@keyframes fu{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.wrap{max-width:1080px;margin:0 auto;padding:0 2rem;}
+.hw{max-width:1080px;margin:0 auto;padding:0 2rem;display:grid;grid-template-columns:1fr 1fr;gap:3.5rem;align-items:center;width:100%;}
+.hey{font-size:.68rem;font-weight:600;color:var(--purple3);text-transform:uppercase;letter-spacing:.16em;margin-bottom:1rem;display:flex;align-items:center;gap:7px;}
+.hey::before{content:'';width:20px;height:1px;background:var(--purple3);}
+.ht{font-family:'Syne',sans-serif;font-size:3.2rem;font-weight:800;line-height:1.05;letter-spacing:-1.4px;margin-bottom:1rem;color:#fff;}
+.ht em{font-style:normal;background:linear-gradient(135deg,var(--purple),var(--teal));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.hs{font-size:.92rem;color:var(--txt2);line-height:1.8;margin-bottom:2rem;max-width:460px;font-weight:300;}
+.hcta{display:flex;gap:10px;flex-wrap:wrap;}
+.btn1{padding:.68rem 1.5rem;background:linear-gradient(135deg,var(--purple2),#6d28d9);color:#fff;border:none;border-radius:10px;font-size:.83rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .25s;box-shadow:0 0 18px rgba(124,58,237,.3);}
+.btn1:hover{transform:translateY(-2px);box-shadow:0 0 28px rgba(124,58,237,.5);}
+.btn2{padding:.68rem 1.5rem;background:transparent;color:var(--txt2);border:1px solid var(--bdr2);border-radius:10px;font-size:.83rem;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .25s;}
+.btn2:hover{color:var(--purple3);border-color:var(--purple);background:rgba(139,92,246,.07);}
+.hstats{display:flex;gap:1.8rem;margin-top:2.2rem;padding-top:2rem;border-top:1px solid var(--bdr);}
+.hsv{font-family:'Syne',sans-serif;font-size:1.75rem;font-weight:800;color:var(--purple3);display:block;line-height:1;margin-bottom:3px;}
+.hsl{font-size:.62rem;color:var(--txt3);text-transform:uppercase;letter-spacing:.09em;}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.fc{background:var(--glass);backdrop-filter:blur(16px);border:1px solid var(--bdr);border-radius:14px;padding:1.1rem;cursor:pointer;transition:all .25s;position:relative;overflow:hidden;}
+.fc::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--purple2),transparent);opacity:0;transition:opacity .3s;}
+.fc:hover{border-color:var(--bdr2);transform:translateY(-3px);box-shadow:0 8px 28px rgba(139,92,246,.14);}
+.fc:hover::before{opacity:1;}
+.fci{font-size:1.15rem;margin-bottom:.45rem;}
+.fct{font-size:.8rem;font-weight:700;color:var(--txt);margin-bottom:2px;font-family:'Syne',sans-serif;}
+.fcd{font-size:.69rem;color:var(--txt3);line-height:1.5;}
+.ph{padding:2.8rem 0 1.8rem;border-bottom:1px solid var(--bdr);margin-bottom:2.2rem;}
+.pe{font-size:.63rem;font-weight:600;color:var(--purple3);text-transform:uppercase;letter-spacing:.16em;margin-bottom:.5rem;display:flex;align-items:center;gap:7px;}
+.pe::before{content:'';width:14px;height:1px;background:var(--purple3);}
+.pt{font-family:'Syne',sans-serif;font-size:1.9rem;font-weight:800;color:#fff;letter-spacing:-.4px;margin-bottom:.4rem;}
+.ps{font-size:.86rem;color:var(--txt2);line-height:1.7;max-width:580px;}
+.why{background:rgba(139,92,246,.06);border:1px solid rgba(139,92,246,.18);border-left:3px solid var(--purple2);border-radius:0 10px 10px 0;padding:.82rem 1.1rem;margin-bottom:1.6rem;font-size:.8rem;color:var(--txt2);line-height:1.7;}
+.why strong{color:var(--purple3);}
+.irow{display:flex;gap:9px;margin-bottom:1.3rem;align-items:stretch;}
+.ri{flex:1;background:rgba(11,11,26,.9);border:1px solid var(--bdr2);border-radius:10px;padding:.72rem 1rem;color:var(--txt);font-size:.86rem;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .2s,box-shadow .2s;}
+.ri:focus{border-color:var(--purple);box-shadow:0 0 0 3px rgba(139,92,246,.1);}
+.ri::placeholder{color:var(--txt3);}
+.rs{background:rgba(11,11,26,.9);border:1px solid var(--bdr2);border-radius:10px;padding:.72rem .9rem;color:var(--txt);font-size:.82rem;font-family:'DM Sans',sans-serif;outline:none;cursor:pointer;}
+.rs:focus{border-color:var(--purple);}
+.rs option{background:var(--bg1);}
+.rb{padding:.72rem 1.4rem;background:linear-gradient(135deg,var(--purple2),#6d28d9);color:#fff;border:none;border-radius:10px;font-size:.82rem;font-weight:600;cursor:pointer;white-space:nowrap;font-family:'DM Sans',sans-serif;transition:all .2s;box-shadow:0 0 14px rgba(124,58,237,.23);}
+.rb:hover{transform:translateY(-1px);box-shadow:0 0 22px rgba(124,58,237,.4);}
+.rb:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+.mg{display:grid;gap:9px;margin-bottom:1.5rem;}
+.mc{background:rgba(11,11,26,.8);border:1px solid var(--bdr);border-radius:12px;padding:.9rem;text-align:center;transition:border-color .2s;}
+.mc:hover{border-color:var(--bdr2);}
+.mv{font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;color:var(--purple3);display:block;line-height:1;}
+.ml{font-size:.61rem;color:var(--txt3);text-transform:uppercase;letter-spacing:.08em;margin-top:3px;display:block;}
+.mg .mc.g .mv{color:var(--green);}.mg .mc.a .mv{color:var(--amber);}.mg .mc.r .mv{color:var(--red);}.mg .mc.b .mv{color:var(--teal2);}
+.tbl{border:1px solid var(--bdr);border-radius:14px;overflow:hidden;margin-bottom:1.1rem;}
+.th{background:rgba(139,92,246,.07);display:grid;padding:7px 15px;font-size:.61rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--txt3);border-bottom:1px solid var(--bdr);}
+.tr{background:rgba(11,11,26,.55);border-top:1px solid var(--bdr);display:grid;padding:11px 15px;align-items:center;transition:background .15s;}
+.tr:hover{background:rgba(139,92,246,.05);}
+.cn{font-weight:700;color:var(--txt);font-size:.85rem;}
+.cs{color:var(--txt3);font-size:.71rem;margin-top:1px;}
+.jc{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--purple3);background:rgba(139,92,246,.1);padding:2px 6px;border-radius:5px;}
+.bdg{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;font-size:.67rem;font-weight:700;white-space:nowrap;}
+.bc{background:rgba(16,185,129,.12);color:var(--green);border:1px solid rgba(16,185,129,.22);}
+.bp{background:rgba(245,158,11,.1);color:var(--amber);border:1px solid rgba(245,158,11,.18);}
+.bs{background:rgba(249,115,22,.1);color:#f97316;border:1px solid rgba(249,115,22,.18);}
+.bn{background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.18);}
+.bq{background:rgba(14,165,233,.1);color:var(--teal2);border:1px solid rgba(14,165,233,.18);}
+.bi{background:rgba(167,139,250,.1);color:var(--purple3);border:1px solid rgba(167,139,250,.18);}
+.pac{border:1px solid var(--bdr);border-radius:14px;overflow:hidden;margin-bottom:.9rem;transition:border-color .25s;}
+.pac:hover{border-color:var(--bdr2);}
+.pah{background:rgba(139,92,246,.06);padding:.9rem 1.2rem;display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid var(--bdr);}
+.pat{font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem;color:var(--txt);}
+.pam{font-size:.69rem;color:var(--txt3);margin-top:2px;}
+.pab{padding:1.1rem 1.2rem;background:rgba(11,11,26,.5);}
+.par{display:flex;gap:9px;align-items:flex-start;padding:7px 0;border-bottom:1px solid var(--bdr);font-size:.81rem;color:var(--txt2);}
+.par:last-child{border-bottom:none;}
+.pic{width:19px;height:19px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;flex-shrink:0;margin-top:1px;}
+.iw{background:rgba(245,158,11,.15);color:var(--amber);}
+.ir{background:rgba(239,68,68,.15);color:var(--red);}
+.ig{background:rgba(16,185,129,.15);color:var(--green);}
+.sti{display:flex;gap:9px;align-items:flex-start;margin-bottom:8px;}
+.stn{width:25px;height:25px;background:rgba(139,92,246,.15);color:var(--purple3);border:1px solid var(--bdr2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:10px;flex-shrink:0;}
+.std{font-weight:600;color:var(--purple3);font-size:.85rem;}
+.ste{color:var(--txt3);font-size:.73rem;margin-top:2px;}
+.di{border-radius:9px;padding:8px 12px;margin:4px 0;display:flex;gap:8px;align-items:flex-start;font-size:.8rem;}
+.dc{background:rgba(239,68,68,.07);border-left:3px solid var(--red);}
+.dg{background:rgba(16,185,129,.07);border-left:3px solid var(--green);}
+.da{background:rgba(11,11,26,.55);border-left:3px solid var(--txt3);}
+.dtx{color:var(--txt2);line-height:1.6;}
+.dsig{display:inline-block;font-size:.61rem;font-weight:800;padding:1px 5px;border-radius:4px;margin-left:4px;vertical-align:middle;}
+.sc{background:rgba(239,68,68,.15);color:var(--red);}
+.sg{background:rgba(16,185,129,.15);color:var(--green);}
+.sa{background:rgba(74,72,112,.2);color:var(--txt3);}
+.vrd{border-radius:9px;padding:9px 13px;margin:9px 0;font-size:.85rem;font-weight:600;display:flex;align-items:center;gap:9px;}
+.vc{background:rgba(239,68,68,.08);color:#fca5a5;border:1px solid rgba(239,68,68,.2);}
+.vg{background:rgba(16,185,129,.08);color:#6ee7b7;border:1px solid rgba(16,185,129,.2);}
+.va{background:rgba(11,11,26,.6);color:var(--txt3);border:1px solid var(--bdr);}
+.ib{background:rgba(11,11,26,.7);border:1px solid var(--bdr);border-radius:9px;padding:8px 12px;font-size:.79rem;color:var(--txt2);margin:7px 0;line-height:1.65;}
+.ib strong{color:var(--purple3);}
+.pgrd{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:.8rem 0;}
+.pt2{background:rgba(11,11,26,.7);border:1px solid var(--bdr);border-radius:9px;padding:9px 12px;display:flex;align-items:center;gap:8px;transition:border-color .2s;}
+.pt2:hover{border-color:var(--bdr2);}
+.pd{width:7px;height:7px;background:var(--green);border-radius:50%;box-shadow:0 0 6px var(--green);flex-shrink:0;}
+.pn{font-weight:600;color:var(--purple3);font-size:.78rem;}
+.pp{color:var(--txt3);font-size:.68rem;}
+.cmpw{border:1px solid var(--bdr);border-radius:14px;overflow:hidden;}
+.cmph{background:rgba(139,92,246,.07);padding:7px 13px;display:grid;font-size:.61rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--txt3);border-bottom:1px solid var(--bdr);}
+.cmpr{background:rgba(11,11,26,.5);border-top:1px solid var(--bdr);padding:8px 13px;display:grid;font-size:.8rem;color:var(--txt2);align-items:center;}
+.cmpr:nth-child(even){background:rgba(139,92,246,.03);}
+.cmpl{color:var(--txt3);font-size:.71rem;font-weight:600;}
+.cmpdiff{color:var(--red)!important;}
+.rbc{background:linear-gradient(135deg,rgba(11,11,26,.9),rgba(30,16,70,.5));border:1px solid rgba(139,92,246,.3);border-radius:14px;padding:1.1rem 1.3rem;margin:1rem 0;}
+.rbl{font-size:.61rem;text-transform:uppercase;letter-spacing:.1em;color:var(--txt3);margin-bottom:4px;}
+.rbt{font-size:.83rem;color:#9d8fd4;line-height:1.7;}
+.exp{border:1px solid var(--bdr);border-radius:12px;overflow:hidden;margin-bottom:7px;transition:border-color .2s;}
+.exp:hover{border-color:var(--bdr2);}
+.exph{padding:.85rem 1.1rem;display:flex;justify-content:space-between;align-items:center;cursor:pointer;background:rgba(11,11,26,.7);font-size:.82rem;font-weight:600;color:var(--txt);user-select:none;transition:background .15s;}
+.exph:hover{background:rgba(139,92,246,.07);}
+.expc{font-size:.68rem;color:var(--txt3);transition:transform .25s;}
+.exp.open .expc{transform:rotate(180deg);}
+.expb{display:none;padding:.9rem 1.1rem;border-top:1px solid var(--bdr);background:rgba(6,6,15,.5);}
+.exp.open .expb{display:block;}
+.ld{display:flex;align-items:center;gap:9px;color:var(--txt3);font-size:.83rem;padding:1.5rem 0;}
+.sp{width:17px;height:17px;border:2px solid var(--bdr);border-top-color:var(--purple);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.emp{text-align:center;padding:3.5rem 2rem;border:1px dashed var(--bdr);border-radius:16px;}
+.ei{font-size:2.2rem;margin-bottom:.8rem;}
+.et{font-family:'Syne',sans-serif;font-size:.95rem;font-weight:700;color:var(--txt);margin-bottom:.3rem;}
+.es{font-size:.8rem;color:var(--txt3);}
+#tw{position:fixed;bottom:1.5rem;right:1.5rem;z-index:999;display:flex;flex-direction:column;gap:7px;}
+.tst{background:var(--bg1);border:1px solid var(--bdr2);border-radius:9px;padding:.72rem 1.1rem;font-size:.8rem;color:var(--txt);display:flex;align-items:center;gap:8px;box-shadow:0 8px 28px rgba(0,0,0,.4);animation:tin .3s ease;}
+@keyframes tin{from{opacity:0;transform:translateX(18px);}to{opacity:1;transform:translateX(0);}}
+.tst.ok{border-color:rgba(16,185,129,.3);}.tst.err{border-color:rgba(239,68,68,.3);}
+.dz{border:2px dashed var(--bdr2);border-radius:14px;padding:2.2rem;text-align:center;cursor:pointer;transition:all .25s;background:rgba(11,11,26,.5);}
+.dz:hover,.dz.drag{border-color:var(--purple);background:rgba(139,92,246,.06);}
+.dzi{font-size:1.8rem;margin-bottom:.7rem;}
+.dzt{font-size:.82rem;color:var(--txt2);}
+.dzs{font-size:.7rem;color:var(--txt3);margin-top:.3rem;}
+.rc{border:1px solid var(--bdr);border-radius:12px;padding:1rem 1.2rem;margin-bottom:.65rem;background:rgba(11,11,26,.6);transition:border-color .2s;}
+.rc:hover{border-color:var(--bdr2);}
+.rsc{display:inline-block;font-size:.67rem;font-weight:700;padding:2px 8px;border-radius:20px;margin-bottom:.45rem;}
+.shi{background:rgba(16,185,129,.15);color:var(--green);}
+.smi{background:rgba(245,158,11,.12);color:var(--amber);}
+.slo{background:rgba(74,72,112,.2);color:var(--txt3);}
+.rm{font-size:.7rem;color:var(--txt3);margin-top:.45rem;}
+.qq{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1.1rem;}
+.qp{background:rgba(139,92,246,.08);border:1px solid var(--bdr);border-radius:20px;padding:4px 12px;font-size:.72rem;color:var(--purple3);cursor:pointer;transition:all .2s;}
+.qp:hover{background:rgba(139,92,246,.16);border-color:var(--bdr2);}
+textarea.ri{resize:vertical;min-height:88px;}
+::-webkit-scrollbar{width:5px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:rgba(139,92,246,.3);border-radius:3px;}
+@media(max-width:768px){.hw{grid-template-columns:1fr;}.fgrid{display:none;}.ht{font-size:2.2rem;}.wrap{padding:0 1rem;}nav{padding:0 1rem;}.nl:nth-child(n+6){display:none;}}
+</style>
+</head>
+<body>
+<div id="cur"></div><div id="cur-r"></div>
+<canvas id="bg-canvas"></canvas>
+<div id="tw"></div>
+
+<nav>
+  <div class="nb">ClaimPath <em>Rx</em> <span>BETA</span></div>
+  <div class="nl on" data-s="home">🏠 Home</div>
+  <div class="nl" data-s="coverage">🔍 Drug Coverage</div>
+  <div class="nl" data-s="pa">📋 PA Criteria</div>
+  <div class="nl" data-s="compare">⚖️ Compare</div>
+  <div class="nl" data-s="changelog">📅 Changelog</div>
+  <div class="nl" data-s="market">🏆 Market</div>
+  <div class="nl" data-s="crawl">🤖 Auto-Crawl</div>
+  <div class="nl" data-s="search">🔎 Search</div>
+  <div class="nl" data-s="ingest">📥 Ingest</div>
+  <div class="nst"><div class="sd" id="sd"></div><span id="st">connecting</span></div>
+</nav>
+
+<!-- HOME -->
+<section class="sec on" id="s-home">
+  <div class="hw">
+    <div>
+      <div class="hey">Medical Benefit Intelligence Platform</div>
+      <h1 class="ht">Policy data,<br><em>finally structured.</em></h1>
+      <p class="hs">ClaimPath Rx ingests, normalizes, and tracks medical benefit drug policies across all major health plans — giving market access teams instant answers instead of hours of PDF reading.</p>
+      <div class="hcta">
+        <button class="btn1" onclick="go('coverage')">🔍 Search Drug Coverage</button>
+        <button class="btn2" onclick="go('crawl')">🤖 Auto-Crawl Payers</button>
+      </div>
+      <div class="hstats">
+        <div><span class="hsv" id="hd">—</span><span class="hsl">Drugs</span></div>
+        <div><span class="hsv" id="hp">—</span><span class="hsl">Payers</span></div>
+        <div><span class="hsv" id="hpol">—</span><span class="hsl">Policies</span></div>
+        <div><span class="hsv" id="hv">—</span><span class="hsl">Vectors</span></div>
+      </div>
+    </div>
+    <div class="fgrid" id="fg"></div>
+  </div>
+</section>
+
+<!-- DRUG COVERAGE -->
+<section class="sec" id="s-coverage">
+  <div class="wrap">
+    <div class="ph"><div class="pe">Use Case 1</div><div class="pt">🔍 Drug Coverage Lookup</div><div class="ps">Search by drug name, brand name, or J-code. Every payer's coverage normalized into one view.</div></div>
+    <div class="why"><strong>Why this matters:</strong> Without this, an analyst opens 10 different PDFs to answer one question. "Humira", "adalimumab", and "J0135" all return the same results here — in seconds.</div>
+    <div class="irow">
+      <input class="ri" id="cd" placeholder="e.g. adalimumab · Humira · J0135" onkeydown="if(event.key==='Enter')sCov()"/>
+      <select class="rs" id="cp"><option value="">All Payers</option></select>
+      <button class="rb" onclick="sCov()">Search →</button>
+    </div>
+    <div class="qq" id="csugg"></div>
+    <div id="cr"></div>
+  </div>
+</section>
+
+<!-- PA CRITERIA -->
+<section class="sec" id="s-pa">
+  <div class="wrap">
+    <div class="ph"><div class="pe">Use Case 2</div><div class="pt">📋 Prior Authorization Criteria</div><div class="ps">Full, structured PA requirements — diagnoses, step drugs, clinical scores, prescriber requirements, renewal terms.</div></div>
+    <div class="why"><strong>Why this matters:</strong> PA criteria are the #1 barrier to drug access. Know exactly what each payer requires — without reading a 40-page PDF.</div>
+    <div class="irow">
+      <input class="ri" id="pad" placeholder="e.g. adalimumab" onkeydown="if(event.key==='Enter')sPA()"/>
+      <select class="rs" id="pap"><option value="">Select Payer</option></select>
+      <button class="rb" onclick="sPA()">Look Up →</button>
+    </div>
+    <div id="par2"></div>
+  </div>
+</section>
+
+<!-- COMPARE -->
+<section class="sec" id="s-compare">
+  <div class="wrap">
+    <div class="ph"><div class="pe">Use Case 3</div><div class="pt">⚖️ Cross-Payer Comparison</div><div class="ps">Same drug, multiple payers — differences auto-highlighted in red.</div></div>
+    <div class="why"><strong>Why this matters:</strong> This is the core client deliverable — exactly where a drug is advantaged or disadvantaged across key payer targets.</div>
+    <div class="irow">
+      <input class="ri" id="cmpd" placeholder="e.g. ustekinumab" style="max-width:260px" onkeydown="if(event.key==='Enter')rCmp()"/>
+      <select class="rs" id="cmpp" multiple style="flex:1;"></select>
+      <button class="rb" onclick="rCmp()">Compare →</button>
+    </div>
+    <div class="ib">Hold <strong>Ctrl/Cmd</strong> to select multiple payers.</div>
+    <div id="cmpr"></div>
+  </div>
+</section>
+
+<!-- CHANGELOG -->
+<section class="sec" id="s-changelog">
+  <div class="wrap">
+    <div class="ph"><div class="pe">Use Case 4</div><div class="pt">📅 Policy Change Tracker</div><div class="ps">Clause-level diffs — know exactly what changed and whether it matters clinically.</div></div>
+    <div class="why"><strong>Why this matters:</strong> Payers update policies quarterly. Each change is classified as <strong>🔴 Clinical</strong> (affects patient access) or <strong>🟢 Cosmetic</strong> (formatting only).</div>
+    <div class="irow">
+      <select class="rs" id="clp"><option value="">All Payers</option></select>
+      <input class="ri" id="cld" placeholder="Drug (optional)"/>
+      <input class="ri" id="cls" type="date" style="max-width:170px"/>
+      <button class="rb" onclick="lCL()">Load →</button>
+    </div>
+    <div class="qq">
+      <div class="qp clf on2" data-f="all">All</div>
+      <div class="qp clf" data-f="clinical">🔴 Clinical</div>
+      <div class="qp clf" data-f="cosmetic">🟢 Cosmetic</div>
+    </div>
+    <div id="clr"></div>
+  </div>
+</section>
+
+<!-- MARKET -->
+<section class="sec" id="s-market">
+  <div class="wrap">
+    <div class="ph"><div class="pe">Gap 2 — Competitive Intelligence</div><div class="pt">🏆 Market Position</div><div class="ps">Class size, competitors, biosimilar pressure — inputs to every rebate contract.</div></div>
+    <div class="why"><strong>Why this matters:</strong> "Preferred 1-of-2" vs "1-of-5 with 7 biosimilars" are completely different rebate situations. This drives every formulary negotiation.</div>
+    <div class="irow">
+      <input class="ri" id="mkd" placeholder="e.g. adalimumab · pembrolizumab" onkeydown="if(event.key==='Enter')aMkt()"/>
+      <button class="rb" onclick="aMkt()">Analyze →</button>
+    </div>
+    <div class="irow">
+      <select class="rs" id="mkc" style="flex:1"><option value="">Or browse a therapeutic class...</option></select>
+      <button class="rb" onclick="lClass()">View Class →</button>
+    </div>
+    <div id="mkr"></div>
+  </div>
+</section>
+
+<!-- CRAWL -->
+<section class="sec" id="s-crawl">
+  <div class="wrap">
+    <div class="ph"><div class="pe">Gap 1 — Auto-Crawl</div><div class="pt">🤖 Automated Policy Retrieval</div><div class="ps">Type a drug name — ClaimPath Rx visits Aetna, UHC, Cigna, BCBS, Humana automatically.</div></div>
+    <div class="why"><strong>Demo wow moment:</strong> An analyst spends 2–3 hours visiting 10 different payer websites. This replaces that with one drug name and one click.</div>
+    <div class="pgrd" id="cpg"></div>
+    <div class="irow">
+      <input class="ri" id="crwd" placeholder="e.g. adalimumab · ustekinumab" onkeydown="if(event.key==='Enter')sCrawl()"/>
+      <select class="rs" id="crwp"><option value="">All Payers</option></select>
+      <button class="rb" id="crwb" onclick="sCrawl()">🤖 Auto-Retrieve</button>
+    </div>
+    <div class="ib">Checks known direct PDF URLs first (instant). Falls back to dynamic crawling. Blocked sites reported gracefully.</div>
+    <div id="crwr"></div>
+  </div>
+</section>
+
+<!-- SEARCH -->
+<section class="sec" id="s-search">
+  <div class="wrap">
+    <div class="ph"><div class="pe">Semantic Search</div><div class="pt">🔎 Ask Anything Across All Policies</div><div class="ps">Natural language Q&A across all ingested documents using AI vector embeddings.</div></div>
+    <div class="why"><strong>Why this matters:</strong> "Which payers require biosimilar trial before originator?" — answered in 2 seconds across every policy ever ingested.</div>
+    <div class="qq">
+      <div class="qp" onclick="fSrch('Which payers require biosimilar trial first?')">Biosimilar trial requirements</div>
+      <div class="qp" onclick="fSrch('Site of care restrictions for IV biologics')">Site of care restrictions</div>
+      <div class="qp" onclick="fSrch('Step therapy requirements for TNF inhibitors')">TNF inhibitor step therapy</div>
+      <div class="qp" onclick="fSrch('What clinical scores does Cigna require for Humira?')">Cigna Humira criteria</div>
+    </div>
+    <textarea class="ri" id="sq" placeholder="Ask anything across all policy documents..." style="margin-bottom:9px;"></textarea>
+    <div class="irow">
+      <select class="rs" id="srchp"><option value="">All Payers</option></select>
+      <select class="rs" id="srchd"><option value="">All Drugs</option></select>
+      <button class="rb" onclick="rSrch()">Search →</button>
+    </div>
+    <div id="srr"></div>
+  </div>
+</section>
+
+<!-- INGEST -->
+<section class="sec" id="s-ingest">
+  <div class="wrap">
+    <div class="ph"><div class="pe">Manual Ingestion</div><div class="pt">📥 Ingest a Policy</div><div class="ps">Upload a PDF or paste a URL. AI extracts criteria, normalizes, computes diffs, adds to knowledge graph.</div></div>
+    <div class="qq" style="margin-bottom:1.4rem;">
+      <div class="qp on2" id="tu" onclick="swTab('url')">🔗 From URL</div>
+      <div class="qp" id="tp" onclick="swTab('pdf')">📄 Upload PDF</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.3rem;">
+      <div><div style="font-size:.67rem;color:var(--txt3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.07em;">Payer Name *</div><input class="ri" id="ip" placeholder="e.g. Aetna"/></div>
+      <div><div style="font-size:.67rem;color:var(--txt3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.07em;">Plan Name</div><input class="ri" id="ipl" placeholder="e.g. Aetna Commercial"/></div>
+      <div><div style="font-size:.67rem;color:var(--txt3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.07em;">Policy ID *</div><input class="ri" id="iid" placeholder="e.g. AETNA-BIO-2024"/></div>
+      <div><div style="font-size:.67rem;color:var(--txt3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.07em;">Policy Number</div><input class="ri" id="inum" placeholder="e.g. CPB 0786"/></div>
+      <div><div style="font-size:.67rem;color:var(--txt3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.07em;">Version</div><input class="ri" id="iver" value="2024.Q4"/></div>
+      <div><div style="font-size:.67rem;color:var(--txt3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.07em;">Effective Date</div><input class="ri" id="ieff" placeholder="2024-10-01"/></div>
+    </div>
+    <div id="up">
+      <div class="irow"><input class="ri" id="iurl" placeholder="https://www.aetna.com/cpb/..."/><button class="rb" onclick="iURL()">Ingest →</button></div>
+    </div>
+    <div id="pp" style="display:none;">
+      <div class="dz" id="dz" onclick="document.getElementById('fi').click()">
+        <div class="dzi">📄</div><div class="dzt">Drop PDF here or click to browse</div><div class="dzs">PDF files up to 50MB</div>
+      </div>
+      <input type="file" id="fi" accept=".pdf" style="display:none" onchange="hFile(this)"/>
+      <div id="fn" style="font-size:.76rem;color:var(--purple3);margin-top:.5rem;"></div>
+      <button class="rb" style="margin-top:.7rem;" onclick="iPDF()">Ingest PDF →</button>
+    </div>
+    <div id="ir" style="margin-top:1rem;"></div>
+    <div style="margin-top:1.8rem;padding-top:1.3rem;border-top:1px solid var(--bdr);">
+      <div style="font-size:.72rem;color:var(--txt3);margin-bottom:.7rem;text-transform:uppercase;letter-spacing:.07em;">Public Payer Portals</div>
+      <a href="https://www.aetna.com/health-care-professionals/clinical-policy-bulletins/medical-clinical-policy-bulletins.html" target="_blank" style="color:var(--purple);font-size:.78rem;text-decoration:none;display:block;margin-bottom:4px;">• Aetna Clinical Policy Bulletins ↗</a>
+      <a href="https://www.uhcprovider.com/en/policies-protocols/advance-notification-med-policies.html" target="_blank" style="color:var(--purple);font-size:.78rem;text-decoration:none;display:block;margin-bottom:4px;">• UnitedHealthcare Medical Policies ↗</a>
+      <a href="https://www.cigna.com/healthcare-professionals/coverage-policies" target="_blank" style="color:var(--purple);font-size:.78rem;text-decoration:none;display:block;margin-bottom:4px;">• Cigna Coverage Policies ↗</a>
+      <a href="https://www.fepblue.org/benefit-information/benefit-resources/clinical-policies" target="_blank" style="color:var(--purple);font-size:.78rem;text-decoration:none;display:block;margin-bottom:4px;">• BCBS Federal Program ↗</a>
+      <a href="https://www.humana.com/provider/medical-resources/pharmacy-resources/specialty-pharmacy/prior-authorization" target="_blank" style="color:var(--purple);font-size:.78rem;text-decoration:none;display:block;">• Humana Prior Auth ↗</a>
+    </div>
+  </div>
+</section>
+
+<script>
+const API=window.location.hostname==='localhost'||window.location.hostname==='127.0.0.1'?'http://localhost:8000':'https://YOUR-RENDER-URL.onrender.com';
+
+// CURSOR
+const cur=document.getElementById('cur'),curR=document.getElementById('cur-r');
+let mx=0,my=0,rx2=0,ry2=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cur.style.left=mx+'px';cur.style.top=my+'px';});
+(function anim(){rx2+=(mx-rx2)*.1;ry2+=(my-ry2)*.1;curR.style.left=rx2+'px';curR.style.top=ry2+'px';requestAnimationFrame(anim);})();
+document.querySelectorAll('button,a,.nl,.qp,.fc,.exph').forEach(el=>{
+  el.addEventListener('mouseenter',()=>{cur.style.transform='translate(-50%,-50%) scale(2.5)';curR.style.width='58px';curR.style.height='58px';curR.style.borderColor='rgba(139,92,246,.8)';});
+  el.addEventListener('mouseleave',()=>{cur.style.transform='translate(-50%,-50%) scale(1)';curR.style.width='34px';curR.style.height='34px';curR.style.borderColor='rgba(139,92,246,.5)';});
+});
+
+// CANVAS
+(function(){
+  const c=document.getElementById('bg-canvas'),ctx=c.getContext('2d');
+  let W,H,dots=[];
+  function rsz(){W=c.width=innerWidth;H=c.height=innerHeight;build();}
+  function build(){dots=[];const g=65;for(let x=0;x<W;x+=g)for(let y=0;y<H;y+=g)dots.push({x,y,ox:x,oy:y,vx:(Math.random()-.5)*.25,vy:(Math.random()-.5)*.25,r:Math.random()*.7+.3});}
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    dots.forEach(d=>{
+      d.x+=d.vx;d.y+=d.vy;
+      if(Math.abs(d.x-d.ox)>7)d.vx*=-1;if(Math.abs(d.y-d.oy)>7)d.vy*=-1;
+      const dist=Math.hypot(d.x-mx,d.y-my),gl=Math.max(0,1-dist/160);
+      ctx.beginPath();ctx.arc(d.x,d.y,d.r+gl*2.5,0,Math.PI*2);
+      ctx.fillStyle=`rgba(139,92,246,${.18+gl*.65})`;ctx.fill();
+    });
+    for(let i=0;i<dots.length;i++)for(let j=i+1;j<dots.length;j++){
+      const dist=Math.hypot(dots[i].x-dots[j].x,dots[i].y-dots[j].y);
+      if(dist<75){ctx.beginPath();ctx.moveTo(dots[i].x,dots[i].y);ctx.lineTo(dots[j].x,dots[j].y);ctx.strokeStyle=`rgba(139,92,246,${(1-dist/75)*.07})`;ctx.lineWidth=.5;ctx.stroke();}
+    }
+    requestAnimationFrame(draw);
+  }
+  window.addEventListener('resize',rsz);rsz();draw();
+})();
+
+// API
+async function aGet(path,params={}){const qs=Object.entries(params).filter(([,v])=>v!=null&&v!=='').map(([k,v])=>`${k}=${encodeURIComponent(v)}`).join('&');const r=await fetch(API+path+(qs?'?'+qs:''));if(!r.ok)throw new Error(await r.text());return r.json();}
+async function aPost(path,body){const r=await fetch(API+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!r.ok)throw new Error(await r.text());return r.json();}
+
+// STATUS
+async function chkSt(){
+  const d2=document.getElementById('sd'),t=document.getElementById('st');
+  try{await aGet('/health');d2.className='sd on';t.textContent='API online';loadAll();}
+  catch{d2.className='sd off';t.textContent='API offline';}
+}chkSt();
+
+// GLOBAL DATA
+let payers2=[],drugs2=[],supP=[],classes2=[];
+async function loadAll(){
+  try{
+    const [st,pr,dr,sp,cr]=await Promise.all([aGet('/stats'),aGet('/payers'),aGet('/drugs'),aGet('/supported-payers'),aGet('/drug-classes')]);
+    const g=st.graph||{},v=st.vector||{};
+    cnt('hd',g.drugs||0);cnt('hp',g.payers||0);cnt('hpol',g.policies||0);cnt('hv',v.total_vectors||0);
+    payers2=pr.payers||[];drugs2=dr.drugs||[];supP=sp.payers||[];classes2=cr.classes||[];
+    fillSels();bldFg();bldCPg();bldSugg();
+  }catch(e){console.warn(e);}
+}
+function cnt(id,target){const el=document.getElementById(id);if(!el)return;let c=0;const s=Math.max(1,Math.ceil(target/40));const t=setInterval(()=>{c=Math.min(c+s,target);el.textContent=c.toLocaleString();if(c>=target)clearInterval(t);},30);}
+function fillSels(){
+  ['cp','pap','clp','srchp'].forEach(id=>{const el=document.getElementById(id);if(!el)return;payers2.forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;el.appendChild(o);});});
+  const cmpS=document.getElementById('cmpp');if(cmpS)payers2.forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;cmpS.appendChild(o);});
+  const dS=document.getElementById('srchd');if(dS)drugs2.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d;dS.appendChild(o);});
+  const mS=document.getElementById('mkc');if(mS)[...new Set([...classes2,'TNF Inhibitor','IL-23 Inhibitor','PD-1 Inhibitor'])].forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;mS.appendChild(o);});
+  const crS=document.getElementById('crwp');if(crS)supP.forEach(p=>{const o=document.createElement('option');o.value=p.key;o.textContent=p.name;crS.appendChild(o);});
+}
+function bldFg(){
+  const items=[{i:'🔍',t:'Drug Coverage',d:'Every payer normalized',s:'coverage'},{i:'📋',t:'PA Criteria',d:'Full PA requirements',s:'pa'},{i:'⚖️',t:'Compare Plans',d:'Side-by-side diffs',s:'compare'},{i:'📅',t:'Changelog',d:'Clause-level policy diffs',s:'changelog'},{i:'🏆',t:'Market Position',d:'Competitive & rebate context',s:'market'},{i:'🤖',t:'Auto-Crawl',d:'Retrieves 5 payers automatically',s:'crawl'},{i:'🔎',t:'Semantic Search',d:'NL Q&A across all policies',s:'search'},{i:'📥',t:'Ingest Policy',d:'Upload PDF or paste URL',s:'ingest'}];
+  document.getElementById('fg').innerHTML=items.map(x=>`<div class="fc" onclick="go('${x.s}')"><div class="fci">${x.i}</div><div class="fct">${x.t}</div><div class="fcd">${x.d}</div></div>`).join('');
+}
+function bldCPg(){document.getElementById('cpg').innerHTML=supP.map(p=>`<div class="pt2"><div class="pd"></div><div><div class="pn">${p.name}</div><div class="pp">${p.strategy.replace(/_/g,' ')}</div></div></div>`).join('');}
+function bldSugg(){document.getElementById('csugg').innerHTML=['adalimumab','dupilumab','ustekinumab','pembrolizumab','infliximab'].map(d=>`<div class="qp" onclick="document.getElementById('cd').value='${d}';sCov()">${d}</div>`).join('');}
+
+// NAV
+function go(s){
+  document.querySelectorAll('.sec').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.nl').forEach(x=>x.classList.remove('on'));
+  const sec=document.getElementById('s-'+s);
+  const lnk=document.querySelector(`.nl[data-s="${s}"]`);
+  if(sec){sec.classList.add('on');window.scrollTo(0,0);}
+  if(lnk)lnk.classList.add('on');
+}
+document.querySelectorAll('.nl').forEach(l=>l.addEventListener('click',()=>go(l.dataset.s)));
+
+// HELPERS
+function bdg(st){const m={covered:`<span class="bdg bc">✓ Covered</span>`,not_covered:`<span class="bdg bn">✗ Not Covered</span>`,covered_with_pa:`<span class="bdg bp">⚠ Prior Auth</span>`,covered_with_step_therapy:`<span class="bdg bs">↻ Step Therapy</span>`,covered_with_quantity_limit:`<span class="bdg bq">⊠ Qty Limited</span>`,covered_site_restricted:`<span class="bdg bq">⊕ Site Restricted</span>`,non_covered_investigational:`<span class="bdg bi">⊘ Investigational</span>`};return m[st]||`<span class="bdg bn">${st}</span>`;}
+function sigB(s){return s==='clinical'?'<span class="dsig sc">🔴 CLINICAL</span>':s==='cosmetic'?'<span class="dsig sg">🟢 COSMETIC</span>':'<span class="dsig sa">⚪ ADMIN</span>';}
+function mets(items,cols){return `<div class="mg" style="grid-template-columns:repeat(${cols},1fr);">${items.map(([v,l,c=''])=>`<div class="mc ${c}"><span class="mv">${v}</span><span class="ml">${l}</span></div>`).join('')}</div>`;}
+function ld2(){return '<div class="ld"><div class="sp"></div>Loading...</div>';}
+function emp(i,t,s){return `<div class="emp"><div class="ei">${i}</div><div class="et">${t}</div><div class="es">${s}</div></div>`;}
+function exp2(h,b){const id='e'+Math.random().toString(36).slice(2);return `<div class="exp" id="${id}"><div class="exph" onclick="tExp('${id}')"><span>${h}</span><span class="expc">▼</span></div><div class="expb">${b}</div></div>`;}
+function tExp(id){document.getElementById(id).classList.toggle('open');}
+function toast(msg,type='ok'){const t=document.createElement('div');t.className=`tst ${type}`;t.textContent=(type==='ok'?'✅ ':'❌ ')+msg;document.getElementById('tw').appendChild(t);setTimeout(()=>t.remove(),3200);}
+
+// COVERAGE
+async function sCov(){
+  const drug=document.getElementById('cd').value.trim();if(!drug)return;
+  const payer=document.getElementById('cp').value;
+  const el=document.getElementById('cr');el.innerHTML=ld2();
+  try{
+    const d=await aGet(`/coverage/${drug}`,{payers:payer||undefined});
+    if(!d?.coverage?.length){el.innerHTML=emp('🔍',`No data for "${drug}"`,`<a onclick="go('crawl')" style="color:var(--purple);cursor:pointer;">Auto-Crawl</a> or <a onclick="go('ingest')" style="color:var(--purple);cursor:pointer;">Ingest manually</a>`);return;}
+    const cov=d.coverage;
+    const npa=cov.filter(r=>r.pa_required).length,nst=cov.filter(r=>r.step_required).length,nbb=cov.filter(r=>r.buy_and_bill).length;
+    const hc=[...new Set(cov.flatMap(r=>r.hcpcs_codes||[]))];
+    const gt='1.4fr 1fr .9fr .9fr 1fr .8fr';
+    let html=mets([[d.total_plans,'Plans Found'],[npa,'PA Required','a'],[nst,'Step Therapy','r'],[nbb,'Buy & Bill','g'],[hc.join(', ')||'—','J-Code(s)','b']],5);
+    html+=`<div class="tbl"><div class="th" style="grid-template-columns:${gt};"><span>Payer/Plan</span><span>Status</span><span>PA</span><span>Step</span><span>Site</span><span>Version</span></div>`;
+    cov.forEach(r=>{
+      const pac=r.pa_required?'var(--amber)':'var(--green)',stc=r.step_required?'#f97316':'var(--green)';
+      const soc=(r.site_of_care||[]).map(s=>s.replace(/_/g,' ')).join(', ').slice(0,26)||'—';
+      html+=`<div class="tr" style="grid-template-columns:${gt};"><div><div class="cn">${r.payer_name||''}</div><div class="cs">${r.plan_name||''}</div></div><div>${bdg(r.coverage_status)}</div><div style="color:${pac};font-weight:700;font-size:.78rem;">${r.pa_required?'⚠ Yes':'✓ No'}</div><div style="color:${stc};font-weight:700;font-size:.78rem;">${r.step_required?'↻ Yes':'✓ No'}</div><div style="font-size:.72rem;color:var(--txt3);">${soc}</div><div><span class="jc">${r.policy_version||''}</span></div></div>`;
+    });
+    html+='</div>';
+    const pap=cov.filter(r=>r.pa_required&&r.pa_criteria?.length);
+    if(pap.length){
+      html+='<div style="font-size:.84rem;font-weight:700;color:var(--purple3);margin:1.3rem 0 .65rem;">📋 Prior Auth Details</div>';
+      pap.forEach(r=>{
+        let b='';
+        if(r.pa_severity)b+=`<div class="ib"><strong>Severity:</strong> ${r.pa_severity}</div>`;
+        if(r.step_drugs?.length)b+=`<div class="ib"><strong>🔄 Must try first:</strong> ${r.step_drugs.join(', ')}${r.step_weeks?' ('+r.step_weeks+' wks)':''}</div>`;
+        (r.pa_criteria||[]).forEach(c=>b+=`<div class="par"><div class="pic iw">⚠</div><div>${c}</div></div>`);
+        (r.pa_exclusions||[]).forEach(c=>b+=`<div class="par"><div class="pic ir">✗</div><div style="color:var(--red);">${c}</div></div>`);
+        html+=exp2(`📋 ${r.payer_name} — ${r.plan_name}`,b);
+      });
+    }
+    el.innerHTML=html;
+  }catch(e){el.innerHTML=emp('⚠️','Error',e.message);}
+}
+
+// PA
+async function sPA(){
+  const drug=document.getElementById('pad').value.trim(),payer=document.getElementById('pap').value;
+  if(!drug||!payer)return toast('Enter both drug and payer','err');
+  const el=document.getElementById('par2');el.innerHTML=ld2();
+  try{
+    const d=await aGet(`/pa/${drug}/${payer}`);
+    if(!d?.criteria?.length){el.innerHTML=emp('📋','No PA criteria found','Try Semantic Search.');return;}
+    el.innerHTML=d.criteria.map(item=>`<div class="pac"><div class="pah"><div><div class="pat">${item.payer_name||'?'} — ${item.plan_name||'?'}</div><div class="pam">Policy ${item.policy_number||''} · v${item.policy_version||''} · Eff ${item.effective_date||'?'}</div></div><div>${bdg(item.pa_required?'covered_with_pa':'covered')}</div></div><div class="pab">
+      ${mets([[item.pa_required?'Yes':'No','PA Req.',item.pa_required?'a':'g'],[item.auth_duration_months||'—','Auth Duration','b'],[item.renewal_required?'Yes':'No','Renewal',item.renewal_required?'a':'g'],[item.step_required?'Yes':'No','Step Therapy',item.step_required?'r':'g']],4)}
+      ${item.severity?`<div class="ib"><strong>Severity:</strong> ${item.severity}</div>`:''}
+      ${item.prescriber_specialties?.length?`<div class="ib"><strong>Prescriber:</strong> ${item.prescriber_specialties.join(', ')}</div>`:''}
+      ${item.step_required&&item.step_drugs?.length?`<div style="font-size:.77rem;font-weight:700;color:var(--purple3);margin:.8rem 0 .35rem;">🔄 Must Try First:</div>${item.step_drugs.map((d3,i)=>`<div class="sti"><div class="stn">${i+1}</div><div><div class="std">${d3}</div><div class="ste">${item.step_weeks?'Min '+item.step_weeks+' weeks':''}</div></div></div>`).join('')}`:''}
+      ${item.raw_criteria?.length?`<div style="font-size:.77rem;font-weight:700;color:var(--purple3);margin:.8rem 0 .35rem;">📄 Full PA Criteria:</div>${item.raw_criteria.map((c,i)=>`<div class="par"><div class="pic iw">${i+1}</div><div>${c}</div></div>`).join('')}`:''}
+      ${item.exclusions?.length?`<div style="font-size:.77rem;font-weight:700;color:var(--red);margin:.8rem 0 .35rem;">❌ Exclusions:</div>${item.exclusions.map(e=>`<div class="par"><div class="pic ir">✗</div><div style="color:var(--red);">${e}</div></div>`).join('')}`:''}
+      ${item.site_of_care?.length?`<div class="ib"><strong>Site of care:</strong> ${item.site_of_care.map(s=>s.replace(/_/g,' ')).join(', ')}</div>`:''}
+    </div></div>`).join('');
+  }catch(e){el.innerHTML=emp('⚠️','Error',e.message);}
+}
+
+// COMPARE
+async function rCmp(){
+  const drug=document.getElementById('cmpd').value.trim();
+  const sel=[...document.getElementById('cmpp').selectedOptions].map(o=>o.value);
+  if(!drug)return toast('Enter a drug name','err');
+  const el=document.getElementById('cmpr');el.innerHTML=ld2();
+  try{
+    const d=await aPost('/compare',{drug_name:drug,payer_names:sel});
+    if(!d?.comparison?.length){el.innerHTML=emp('⚖️','No comparison data','Ingest policies first.');return;}
+    const rows=d.comparison,pnames=rows.map(r=>r.payer_name||'?'),gt=`160px ${rows.map(()=>'1fr').join(' ')}`;
+    const flds=[['coverage_status','Coverage',v=>v?.replace(/_/g,' ')||'—'],['pa_required','PA Required',v=>v?'⚠ Yes':'✓ No'],['pa_severity','Severity',v=>v||'—'],['step_required','Step Therapy',v=>v?'↻ Yes':'✓ No'],['step_drugs','Must Try',v=>v?.join(', ')||'—'],['step_weeks','Min Weeks',v=>v?v+'w':'—'],['buy_and_bill','Buy & Bill',v=>v?'Yes':'No'],['auth_duration_months','Auth Duration',v=>v?v+' mo':'—'],['policy_version','Version',v=>v||'—']];
+    let html=`<div class="cmpw"><div class="cmph" style="grid-template-columns:${gt};"><span>Field</span>${pnames.map(n=>`<span>${n}</span>`).join('')}</div>`;
+    flds.forEach(([f,lbl,fmt])=>{
+      const vals=rows.map(r=>fmt(r[f]));
+      const uniq=new Set(vals.filter(v=>v&&v!=='—'));
+      html+=`<div class="cmpr" style="grid-template-columns:${gt};"><span class="cmpll">${lbl}</span>${vals.map(v=>`<span ${uniq.size>1&&v!=='—'?'class="cmpdiff"':''}>${v}</span>`).join('')}</div>`;
+    });
+    html+='</div><div style="font-size:.69rem;color:var(--txt3);margin-top:5px;">🔴 Red = differs across payers</div>';
+    el.innerHTML=html;
+  }catch(e){el.innerHTML=emp('⚠️','Error',e.message);}
+}
+
+// CHANGELOG
+let clf2='all';
+document.getElementById('cls').valueAsDate=new Date(Date.now()-90*86400000);
+document.querySelectorAll('.clf').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.clf').forEach(x=>x.classList.remove('on2'));
+  b.classList.add('on2');clf2=b.dataset.f;
+}));
+async function lCL(){
+  const payer=document.getElementById('clp').value,drug=document.getElementById('cld').value.trim(),since=document.getElementById('cls').value;
+  const el=document.getElementById('clr');el.innerHTML=ld2();
+  try{
+    const d=await aGet('/changelog',{payer:payer||undefined,drug:drug||undefined,since:since||undefined});
+    if(!d?.changes?.length){el.innerHTML=emp('📅','No changes found','Ingest multiple versions to see diffs.');return;}
+    const changes=d.changes;
+    const nc=changes.reduce((a,c)=>a+c.clinical_changes,0),ng=changes.reduce((a,c)=>a+c.cosmetic_changes,0),na=changes.reduce((a,c)=>a+c.administrative_changes,0);
+    let html=mets([[d.total_changes,'Total'],[nc,'🔴 Clinical','r'],[ng,'🟢 Cosmetic','g'],[na,'⚪ Admin']],4);
+    const filtered=changes.filter(c=>clf2==='clinical'?c.clinical_changes>0:clf2==='cosmetic'?c.cosmetic_changes>0&&!c.clinical_changes:true);
+    html+=`<div style="font-size:.7rem;color:var(--txt3);margin-bottom:.7rem;">Showing ${filtered.length} of ${changes.length}</div>`;
+    filtered.forEach(ch=>{
+      const icon=ch.clinical_changes?'🔴':ch.cosmetic_changes?'🟢':'⚪',vcss=ch.clinical_changes?'vc':ch.cosmetic_changes?'vg':'va';
+      let b=`<div class="vrd ${vcss}">${icon} ${ch.significance_verdict||''}</div>`;
+      b+=`<div style="font-size:.75rem;color:var(--txt3);margin-bottom:.7rem;">Policy ${ch.policy_id||''} · ${ch.plan_name||''} · ${String(ch.detected_at||'').slice(0,10)}</div>`;
+      b+=`<div style="font-size:.8rem;color:var(--txt2);margin-bottom:.7rem;"><strong style="color:var(--txt);">Summary:</strong> ${ch.summary||''}</div>`;
+      (ch.changes||[]).forEach(cc=>{
+        const sig=cc.significance||'administrative',dcss=sig==='clinical'?'dc':sig==='cosmetic'?'dg':'da';
+        const di=cc.change_type?.includes('added')?'➕':cc.change_type?.includes('removed')?'➖':'✏️';
+        b+=`<div class="di ${dcss}"><span>${di}</span><div class="dtx">${cc.human_readable||''} ${sigB(sig)}<br><small style="opacity:.5;">${cc.significance_rationale||''}</small></div></div>`;
+      });
+      html+=exp2(`${icon} ${ch.payer_name||''} — ${ch.drug_name||''} — v${ch.old_version||'?'}→v${ch.new_version||'?'}`,b);
+    });
+    el.innerHTML=html;
+  }catch(e){el.innerHTML=emp('⚠️','Error',e.message);}
+}
+
+// MARKET
+async function aMkt(){
+  const drug=document.getElementById('mkd').value.trim();if(!drug)return toast('Enter a drug name','err');
+  const el=document.getElementById('mkr');el.innerHTML=ld2();
+  try{
+    const d=await aGet(`/competitive/${drug}`);
+    const cs=d.class_size||0,bc=d.biosimilar_count||0;
+    let html=mets([[d.drug_class||'—','Drug Class'],[cs,'Class Size',cs>3?'r':cs>1?'a':'g'],[bc,'Biosimilars',bc>3?'r':bc>0?'a':'g'],[d.payers_tracking||0,'Payers Tracking']],4);
+    if(d.competitive_label)html+=`<div style="font-size:.88rem;font-weight:700;color:var(--purple3);margin:.7rem 0;">${d.competitive_label}</div>`;
+    if(d.rebate_context)html+=`<div class="rbc"><div class="rbl">💰 Rebate Economics</div><div class="rbt">${d.rebate_context}</div></div>`;
+    if(d.competitors_in_class?.length)html+=`<div class="ib"><strong>Competitors:</strong> ${d.competitors_in_class.map(c=>c.charAt(0).toUpperCase()+c.slice(1)).join(', ')}</div>`;
+    el.innerHTML=html;
+  }catch(e){el.innerHTML=emp('⚠️',`'${document.getElementById('mkd').value}' not found`,'Try adalimumab or humira.');}
+}
+async function lClass(){
+  const cls=document.getElementById('mkc').value;if(!cls)return;
+  const el=document.getElementById('mkr');el.innerHTML=ld2();
+  try{
+    const d=await aGet(`/class-landscape/${cls}`);
+    if(!d?.drugs?.length){el.innerHTML=emp('🏆','No data','');return;}
+    const gt='1.1fr 1fr 1fr 1fr .6fr .7fr';
+    let html=`<div class="tbl"><div class="th" style="grid-template-columns:${gt};"><span>Drug</span><span>Brand</span><span>HCPCS</span><span>Mechanism</span><span>Peers</span><span>Biosimilars</span></div>`;
+    d.drugs.forEach(dr=>{html+=`<div class="tr" style="grid-template-columns:${gt};"><div class="cn">${dr.canonical||''}</div><div style="font-size:.76rem;color:var(--txt2);">${(dr.brand_names||[]).slice(0,2).join(', ')}</div><div><span class="jc">${(dr.hcpcs||[]).join(', ')}</span></div><div style="font-size:.73rem;color:var(--txt3);">${dr.mechanism||''}</div><div style="font-weight:700;color:${dr.class_size>3?'var(--red)':'var(--green)'};">${dr.class_size||'—'}</div><div style="font-weight:700;color:${dr.biosimilar_count>0?'var(--amber)':'var(--green)'};">${dr.biosimilar_count||0}</div></div>`;});
+    html+='</div>';el.innerHTML=html;
+  }catch(e){el.innerHTML=emp('⚠️','Error',e.message);}
+}
+
+// CRAWL
+async function sCrawl(){
+  const drug=document.getElementById('crwd').value.trim();if(!drug)return toast('Enter a drug name','err');
+  const payer=document.getElementById('crwp').value;
+  const btn=document.getElementById('crwb'),el=document.getElementById('crwr');
+  btn.disabled=true;btn.textContent='🔄 Crawling...';el.innerHTML=ld2();
+  try{
+    const d=await aPost('/auto-ingest',{drug_name:drug,payer_keys:payer?[payer]:[]});
+    let html=mets([[d.discovered||0,'Discovered'],[d.downloaded||0,'Downloaded','a'],[d.ingested||0,'Ingested','g']],3);
+    (d.sources||[]).forEach(s=>html+=`<div class="di dg"><span>✅</span><div class="dtx"><strong>${s.payer}</strong> — ${s.policy_number} — ${s.drugs_extracted||0} drugs<br><small style="opacity:.5;">${s.pdf_url}</small></div></div>`);
+    (d.errors||[]).forEach(e=>html+=`<div class="di dc"><span>⚠️</span><div class="dtx">${e}</div></div>`);
+    if(d.ingested>0){html+=`<div class="ib" style="margin-top:.9rem;">✅ Done! <a onclick="go('coverage')" style="color:var(--purple);cursor:pointer;">Search Drug Coverage →</a></div>`;toast(`${d.ingested} policies ingested`);}
+    el.innerHTML=html;
+  }catch(e){el.innerHTML=emp('⚠️','Crawl failed',e.message);}
+  btn.disabled=false;btn.textContent='🤖 Auto-Retrieve';
+}
+
+// SEARCH
+function fSrch(q){document.getElementById('sq').value=q;rSrch();}
+async function rSrch(){
+  const q=document.getElementById('sq').value.trim();if(!q)return;
+  const payer=document.getElementById('srchp').value,drug=document.getElementById('srchd').value;
+  const el=document.getElementById('srr');el.innerHTML=ld2();
+  try{
+    const d=await aPost('/search',{query:q,top_k:6,filter_payer:payer||null,filter_drug:drug||null});
+    if(!d?.results?.length){el.innerHTML=emp('🔎','No results','Try broader terms or ingest more policies.');return;}
+    el.innerHTML=d.results.map(r=>{
+      const score=Math.round((r.score||0)*100),scls=score>=80?'shi':score>=60?'smi':'slo';
+      return `<div class="rc"><span class="rsc ${scls}">${score}% match</span><div style="font-weight:700;color:var(--txt);font-size:.87rem;margin-bottom:.35rem;">${r.payer_name||'?'} — ${r.drug_name||'?'}</div><div style="font-size:.8rem;color:var(--txt2);line-height:1.65;">${r.text||''}</div><div class="rm">Policy ${r.policy_id||''} · v${r.policy_version||''} · ${r.coverage_status||''}</div></div>`;
+    }).join('');
+  }catch(e){el.innerHTML=emp('⚠️','Error',e.message);}
+}
+
+// INGEST
+function swTab(t){
+  document.getElementById('up').style.display=t==='url'?'block':'none';
+  document.getElementById('pp').style.display=t==='pdf'?'block':'none';
+  document.getElementById('tu').classList.toggle('on2',t==='url');
+  document.getElementById('tp').classList.toggle('on2',t==='pdf');
+}
+let selFile=null;
+function hFile(inp){selFile=inp.files[0];document.getElementById('fn').textContent=selFile?'📄 '+selFile.name:'';}
+const dz=document.getElementById('dz');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag');selFile=e.dataTransfer.files[0];if(selFile)document.getElementById('fn').textContent='📄 '+selFile.name;});
+function gFields(){return{payer_name:document.getElementById('ip').value,plan_name:document.getElementById('ipl').value,policy_id:document.getElementById('iid').value,policy_number:document.getElementById('inum').value,policy_version:document.getElementById('iver').value,effective_date:document.getElementById('ieff').value};}
+async function iURL(){
+  const url=document.getElementById('iurl').value.trim(),f=gFields();
+  if(!url||!f.payer_name)return toast('URL and payer name required','err');
+  const el=document.getElementById('ir');el.innerHTML=ld2();
+  try{const d=await aPost('/ingest/url',{url,...f});if(d?.status==='success'){el.innerHTML=`<div class="di dg"><span>✅</span><div class="dtx"><strong>Ingested!</strong> ${d.drugs_extracted||0} drugs · ${d.chunks_indexed||0} chunks · ${d.diffs_created||0} diffs<br>${d.drug_names?.join(', ')||''}</div></div>`;toast('Policy ingested');}}
+  catch(e){el.innerHTML=emp('⚠️','Failed',e.message);}
+}
+async function iPDF(){
+  if(!selFile)return toast('Select a PDF first','err');
+  const f=gFields();if(!f.payer_name)return toast('Payer name required','err');
+  const el=document.getElementById('ir');el.innerHTML=ld2();
+  try{
+    const form=new FormData();form.append('file',selFile);
+    const qs=new URLSearchParams(f).toString();
+    const r=await fetch(`${API}/ingest/upload?${qs}`,{method:'POST',body:form});
+    const d=await r.json();
+    el.innerHTML=`<div class="di dg"><span>✅</span><div class="dtx"><strong>Ingested!</strong> ${d.drugs_extracted||0} drugs · ${d.chunks_indexed||0} chunks<br>${d.drug_names?.join(', ')||''}</div></div>`;
+    toast('PDF ingested');
+  }catch(e){el.innerHTML=emp('⚠️','Failed',e.message);}
+}
+</script>
+</body>
+</html>
