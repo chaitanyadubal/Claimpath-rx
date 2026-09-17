@@ -252,7 +252,7 @@ Claimpath-rx/
 **ASU Innovation Hacks 2.0** — April 2026  
 *Anton Rx Challenge: Medical Benefit Drug Policy Tracker*
 
-**Team:** Solo submission  
+**Team:** Group submission  
 **Developer:** Chaitanya Dubal — MSc Information Technology, Arizona State University
 
 ---
